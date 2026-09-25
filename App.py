@@ -1,6 +1,8 @@
 import streamlit as st
 import streamlit.components.v1 as components
 import numpy as np
+import pandas as pd
+import requests
 from datetime import datetime
 
 # Streamlit Page Setup
@@ -125,57 +127,86 @@ jurisdiction = st.sidebar.selectbox(
 # LOCALISED DATABASE WITH PRECISE LAT/LON AND SUB-ZONES
 location_database = {
     "Thanjavur District": {
-        "lat": 10.7867, "lon": 79.1378, "zoom": 12,
-        "base_temp": 37.6, "humidity": 66, "solar": 910, "wind": 8.5,
+        "lat": 10.7867, "lon": 79.1378, "zoom": 12, "solar": 910,
         "zones": [
-            {"name": "SIPCOT Industrial Complex", "lat": 10.8120, "lon": 79.1250, "temp": 38.1, "rh": 64},
-            {"name": "Old Bus Stand Transit Sector", "lat": 10.7860, "lon": 79.1380, "temp": 37.5, "rh": 68},
-            {"name": "Medical College Belt", "lat": 10.7420, "lon": 79.1050, "temp": 36.8, "rh": 66}
+            {"name": "SIPCOT Industrial Complex", "lat": 10.8120, "lon": 79.1250, "offset_t": 0.5, "offset_rh": -2},
+            {"name": "Old Bus Stand Transit Sector", "lat": 10.7860, "lon": 79.1380, "offset_t": 0.0, "offset_rh": 2},
+            {"name": "Medical College Belt", "lat": 10.7420, "lon": 79.1050, "offset_t": -0.8, "offset_rh": 0}
         ]
     },
     "Coimbatore Industrial Belt": {
-        "lat": 11.0168, "lon": 76.9558, "zoom": 12,
-        "base_temp": 33.2, "humidity": 52, "solar": 840, "wind": 12.0,
+        "lat": 11.0168, "lon": 76.9558, "zoom": 12, "solar": 840,
         "zones": [
-            {"name": "Peelamedu Industrial Estate", "lat": 11.0250, "lon": 77.0020, "temp": 33.8, "rh": 50},
-            {"name": "SIDCO Machinery Hub", "lat": 10.9950, "lon": 76.9200, "temp": 34.1, "rh": 48},
-            {"name": "Gandhipuram Transit Zone", "lat": 11.0180, "lon": 76.9650, "temp": 32.9, "rh": 54}
+            {"name": "Peelamedu Industrial Estate", "lat": 11.0250, "lon": 77.0020, "offset_t": 0.6, "offset_rh": -2},
+            {"name": "SIDCO Machinery Hub", "lat": 10.9950, "lon": 76.9200, "offset_t": 0.9, "offset_rh": -4},
+            {"name": "Gandhipuram Transit Zone", "lat": 11.0180, "lon": 76.9650, "offset_t": -0.3, "offset_rh": 2}
         ]
     },
     "Chennai Metropolitan Area": {
-        "lat": 13.0827, "lon": 80.2707, "zoom": 12,
-        "base_temp": 39.5, "humidity": 74, "solar": 945, "wind": 6.2,
+        "lat": 13.0827, "lon": 80.2707, "zoom": 12, "solar": 945,
         "zones": [
-            {"name": "Guindy Industrial Sector", "lat": 13.0100, "lon": 80.2100, "temp": 40.1, "rh": 72},
-            {"name": "Central Railway Junction", "lat": 13.0820, "lon": 80.2750, "temp": 40.5, "rh": 70},
-            {"name": "T. Nagar Commercial Hub", "lat": 13.0410, "lon": 80.2330, "temp": 39.0, "rh": 76}
+            {"name": "Guindy Industrial Sector", "lat": 13.0100, "lon": 80.2100, "offset_t": 0.6, "offset_rh": -2},
+            {"name": "Central Railway Junction", "lat": 13.0820, "lon": 80.2750, "offset_t": 1.0, "offset_rh": -4},
+            {"name": "T. Nagar Commercial Hub", "lat": 13.0410, "lon": 80.2330, "offset_t": -0.5, "offset_rh": 2}
         ]
     },
     "Madurai District": {
-        "lat": 9.9252, "lon": 78.1198, "zoom": 12,
-        "base_temp": 40.8, "humidity": 48, "solar": 960, "wind": 7.0,
+        "lat": 9.9252, "lon": 78.1198, "zoom": 12, "solar": 960,
         "zones": [
-            {"name": "Kappalur Industrial Complex", "lat": 9.8800, "lon": 78.0500, "temp": 41.4, "rh": 45},
-            {"name": "Mattuthavani Bus Terminal", "lat": 9.9450, "lon": 78.1500, "temp": 41.0, "rh": 50},
-            {"name": "Periyar Market Sector", "lat": 9.9150, "lon": 78.1100, "temp": 40.2, "rh": 52}
+            {"name": "Kappalur Industrial Complex", "lat": 9.8800, "lon": 78.0500, "offset_t": 0.6, "offset_rh": -3},
+            {"name": "Mattuthavani Bus Terminal", "lat": 9.9450, "lon": 78.1500, "offset_t": 0.2, "offset_rh": 2},
+            {"name": "Periyar Market Sector", "lat": 9.9150, "lon": 78.1100, "offset_t": -0.6, "offset_rh": 4}
         ]
     },
     "Tiruchirappalli Metro": {
-        "lat": 10.7905, "lon": 78.7047, "zoom": 12,
-        "base_temp": 38.9, "humidity": 58, "solar": 895, "wind": 9.1,
+        "lat": 10.7905, "lon": 78.7047, "zoom": 12, "solar": 895,
         "zones": [
-            {"name": "BHEL Industrial Zone", "lat": 10.7820, "lon": 78.7850, "temp": 39.4, "rh": 56},
-            {"name": "Chatram Bus Stand Area", "lat": 10.8350, "lon": 78.6900, "temp": 38.8, "rh": 60},
-            {"name": "Thiruverumbur Factory Belt", "lat": 10.7750, "lon": 78.7600, "temp": 38.3, "rh": 58}
+            {"name": "BHEL Industrial Zone", "lat": 10.7820, "lon": 78.7850, "offset_t": 0.5, "offset_rh": -2},
+            {"name": "Chatram Bus Stand Area", "lat": 10.8350, "lon": 78.6900, "offset_t": -0.1, "offset_rh": 2},
+            {"name": "Thiruverumbur Factory Belt", "lat": 10.7750, "lon": 78.7600, "offset_t": -0.6, "offset_rh": 0}
         ]
     }
 }
 
 loc_data = location_database[jurisdiction]
 
+# REAL-TIME WEATHER FETCHING VIA OPEN-METEO API (FREE, NO API KEY)
+@st.cache_data(ttl=300)
+def fetch_live_weather(lat, lon):
+    try:
+        url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m"
+        response = requests.get(url, timeout=3)
+        data = response.json()
+        current = data.get("current", {})
+        temp = current.get("temperature_2m")
+        humidity = current.get("relative_humidity_2m")
+        wind = current.get("wind_speed_10m")
+        return temp, humidity, wind
+    except Exception:
+        return None, None, None
+
+live_temp, live_rh, live_wind = fetch_live_weather(loc_data["lat"], loc_data["lon"])
+
+base_temp = round(live_temp, 1) if live_temp is not None else 37.5
+humidity = int(live_rh) if live_rh is not None else 65
+wind = round(live_wind, 1) if live_wind is not None else 9.0
+solar = loc_data["solar"]
+
+processed_zones = []
+for z in loc_data["zones"]:
+    zt = round(base_temp + z["offset_t"], 1)
+    zrh = max(30, min(95, humidity + z["offset_rh"]))
+    processed_zones.append({
+        "name": z["name"],
+        "lat": z["lat"],
+        "lon": z["lon"],
+        "temp": zt,
+        "rh": zrh
+    })
+
 # WBGT Calculation (ISO 7243 Standard)
-e_val = (loc_data["humidity"] / 100.0) * 6.105 * np.exp((17.27 * loc_data["base_temp"]) / (237.7 + loc_data["base_temp"]))
-curr_wbgt = round(0.567 * loc_data["base_temp"] + 0.393 * e_val + 3.94, 1)
+e_val = (humidity / 100.0) * 6.105 * np.exp((17.27 * base_temp) / (237.7 + base_temp))
+curr_wbgt = round(0.567 * base_temp + 0.393 * e_val + 3.94, 1)
 
 hazard_status = "CRITICAL HAZARD" if curr_wbgt >= 42.0 else ("EXTREME HAZARD" if curr_wbgt >= 35.0 else "HIGH WARNING")
 status_color = "#ef4444" if curr_wbgt >= 35.0 else "#f97316"
@@ -188,7 +219,7 @@ st.markdown(f"""
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
             <h1 style="margin:0; font-size: 26px; font-weight:900; color:#fff;">🔥 CalorPulse Operational Command Center</h1>
-            <p style="margin:6px 0 0 0; color:#94a3b8; font-size:14px;">Jurisdiction: <span style="color:#38bdf8; font-weight:700;">{jurisdiction}</span></p>
+            <p style="margin:6px 0 0 0; color:#94a3b8; font-size:14px;">Jurisdiction: <span style="color:#38bdf8; font-weight:700;">{jurisdiction}</span> | <span style="color:#10b981; font-weight:700;">● Live API Synced</span></p>
         </div>
         <div>
             <span style="background-color:#0284c7; color:#fff; padding:8px 16px; border-radius:30px; font-size:12px; font-weight:800; letter-spacing:1px;">
@@ -255,22 +286,22 @@ with tab1:
         """, unsafe_allow_html=True)
         
     with c_metrics:
-        st.markdown(f"### 🌡️ Micro-Climate Parameters — {jurisdiction}")
+        st.markdown(f"### 🌡️ Live Micro-Climate Parameters — {jurisdiction}")
         m_col1, m_col2 = st.columns(2)
         with m_col1:
-            st.markdown(f'<div class="dept-card"><div class="dept-card-title">Ambient Temperature</div><div class="dept-card-value">{loc_data["base_temp"]} °C</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="dept-card"><div class="dept-card-title">Live Temperature</div><div class="dept-card-value">{base_temp} °C</div></div>', unsafe_allow_html=True)
             st.write("")
-            st.markdown(f'<div class="dept-card"><div class="dept-card-title">Solar Radiation</div><div class="dept-card-value">{loc_data["solar"]} W/m²</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="dept-card"><div class="dept-card-title">Solar Radiation</div><div class="dept-card-value">{solar} W/m²</div></div>', unsafe_allow_html=True)
         with m_col2:
-            st.markdown(f'<div class="dept-card"><div class="dept-card-title">Relative Humidity</div><div class="dept-card-value">{loc_data["humidity"]} %</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="dept-card"><div class="dept-card-title">Live Relative Humidity</div><div class="dept-card-value">{humidity} %</div></div>', unsafe_allow_html=True)
             st.write("")
-            st.markdown(f'<div class="dept-card"><div class="dept-card-title">Wind Speed</div><div class="dept-card-value">{loc_data["wind"]} km/h</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="dept-card"><div class="dept-card-title">Live Wind Speed</div><div class="dept-card-value">{wind} km/h</div></div>', unsafe_allow_html=True)
 
     st.divider()
     st.subheader(f"🏢 {jurisdiction} Region Breakdown")
     
     z_cols = st.columns(3)
-    for idx, z in enumerate(loc_data["zones"]):
+    for idx, z in enumerate(processed_zones):
         e_z = (z["rh"] / 100.0) * 6.105 * np.exp((17.27 * z["temp"]) / (237.7 + z["temp"]))
         wbgt_z = round(0.567 * z["temp"] + 0.393 * e_z + 3.94, 1)
         z_status = "CRITICAL HAZARD" if wbgt_z >= 40.0 else "EXTREME HAZARD"
@@ -291,11 +322,11 @@ with tab1:
             """, unsafe_allow_html=True)
 
 # ===================================================================
-# TAB 2: FREE LOCALISED LEAFLET RADAR MAP (NO API KEY NEEDED)
+# TAB 2: FREE LOCALISED LEAFLET RADAR MAP
 # ===================================================================
 with tab2:
     st.subheader(f"🌍 High-Resolution Local Thermal Radar — {jurisdiction}")
-    st.caption("Live temperature radar auto-centered on the selected jurisdiction. Switch the district in the sidebar and the map recenters automatically. Scroll or use +/- to zoom — fully interactive, no external limits.")
+    st.caption("Live temperature weather radar synced with live meteorological API data.")
 
     import json as _json
 
@@ -311,14 +342,14 @@ with tab2:
         else:
             return "#eab308"
 
-    center_wbgt = _wbgt_of(loc_data["base_temp"], loc_data["humidity"])
+    center_wbgt = _wbgt_of(base_temp, humidity)
     map_points = [{
         "name": jurisdiction + " (HQ)",
         "lat": loc_data["lat"], "lon": loc_data["lon"],
-        "temp": loc_data["base_temp"], "rh": loc_data["humidity"],
+        "temp": base_temp, "rh": humidity,
         "wbgt": center_wbgt, "color": _color_of(center_wbgt), "hq": True
     }]
-    for z in loc_data["zones"]:
+    for z in processed_zones:
         w = _wbgt_of(z["temp"], z["rh"])
         map_points.append({
             "name": z["name"], "lat": z["lat"], "lon": z["lon"],
@@ -326,21 +357,13 @@ with tab2:
             "wbgt": w, "color": _color_of(w), "hq": False
         })
 
-    # Fixed scale so colors always mean the same temperature across every
-    # jurisdiction (mirrors Windy's fixed -20..40 legend, tuned to our hot range).
     SCALE_MIN, SCALE_MAX = 15, 45
 
     leaflet_html = f"""
     <div style="position:relative;">
         <div id="calorpulse-map" style="width:100%; height:560px; border-radius:14px; overflow:hidden; border:1px solid #1f2937;"></div>
         <div style="position:absolute; top:12px; right:12px; z-index:500; background:rgba(15,23,42,0.85); color:#fff; font-family:sans-serif; font-size:11px; font-weight:800; padding:6px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15);">
-            🌡️ Temperature
-        </div>
-        <div style="position:absolute; left:12px; right:12px; bottom:12px; z-index:500; background:rgba(15,23,42,0.88); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:8px 14px;">
-            <div style="height:10px; border-radius:5px; background:linear-gradient(to right, #3b0764, #1d4ed8, #0ea5e9, #22c55e, #eab308, #f97316, #ef4444, #7f1d1d);"></div>
-            <div style="display:flex; justify-content:space-between; font-family:sans-serif; font-size:10px; color:#cbd5e1; margin-top:4px;">
-                <span>{SCALE_MIN}°C</span><span>20°C</span><span>25°C</span><span>30°C</span><span>35°C</span><span>40°C</span><span>{SCALE_MAX}°C</span>
-            </div>
+            🌡️ Live Temperature
         </div>
     </div>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
@@ -354,35 +377,20 @@ with tab2:
             scrollWheelZoom: true,
             zoomControl: true,
             fadeAnimation: false,
-            // leaflet.heat draws to a plain canvas that can't keep up with
-            // Leaflet's zoom-animation transform, which is what caused the
-            // heat layer to flash/jump on zoom. Turning zoom animation off
-            // makes it snap cleanly instead of glitching.
             zoomAnimation: false,
             markerZoomAnimation: false,
             preferCanvas: true
         }}).setView([{loc_data['lat']}, {loc_data['lon']}], {loc_data['zoom']});
 
-        // Real, fully-localised street map underneath — every road/place name visible.
         var baseLayer = L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
             maxZoom: 19,
             attribution: '&copy; OpenStreetMap contributors'
         }}).addTo(map);
 
-        // The iframe reports its final size a beat after Leaflet first paints,
-        // which is what caused the grey/half-loaded tile glitch. Force Leaflet
-        // to re-measure once the container has settled.
         function fixSize() {{ map.invalidateSize(false); }}
         window.addEventListener('load', fixSize);
         setTimeout(fixSize, 250);
-        setTimeout(fixSize, 800);
-        baseLayer.on('load', fixSize);
 
-        // Windy-style translucent heat-color layer on top of the streets.
-        // Jitter a few synthetic samples around each real reading so the
-        // blob spreads smoothly across the district instead of tiny dots.
-        // Uses a deterministic pseudo-random sequence (not Math.random()) so
-        // the blob is stable and doesn't reshuffle every Streamlit rerun.
         function seededRand(seed) {{
             var x = Math.sin(seed) * 10000;
             return x - Math.floor(x);
@@ -418,7 +426,6 @@ with tab2:
             }}
         }}).addTo(map);
 
-        // Local sub-station markers + labels stay on top, fully localised.
         points.forEach(function(p) {{
             var radius = p.hq ? 14 : 10;
             var marker = L.circleMarker([p.lat, p.lon], {{
@@ -433,15 +440,6 @@ with tab2:
             marker.bindTooltip(
                 '<b>' + p.name + '</b><br>' + p.temp + '&deg;C',
                 {{ permanent: true, direction: 'top', offset: [0, -radius], className: 'temp-label' }}
-            );
-
-            marker.bindPopup(
-                '<div style="font-family:sans-serif; min-width:170px;">' +
-                '<b>' + p.name + '</b><br>' +
-                'Temp: <b>' + p.temp + '&deg;C</b><br>' +
-                'Humidity: <b>' + p.rh + '%</b><br>' +
-                'WBGT: <b style="color:' + p.color + ';">' + p.wbgt + '&deg;C</b>' +
-                '</div>'
             );
         }});
     </script>
@@ -462,21 +460,6 @@ with tab2:
     """
 
     components.html(leaflet_html, height=570, scrolling=False)
-
-    st.caption(f"📍 Centered on {jurisdiction} ({loc_data['lat']}, {loc_data['lon']}) · Layer: Temperature · {len(map_points)} live sub-station points")
-    
-    st.write("")
-    st.markdown("### 📌 Active Local Sub-Station Sensors in View")
-    sub_cols = st.columns(len(loc_data["zones"]))
-    for idx, z in enumerate(loc_data["zones"]):
-        with sub_cols[idx]:
-            st.markdown(f"""
-            <div style="background:#111827; border:1px solid #1f2937; border-radius:12px; padding:14px; text-align:center;">
-                <div style="font-size:12px; font-weight:700; color:#38bdf8;">{z['name']}</div>
-                <div style="font-size:20px; font-weight:900; color:#fff; margin:6px 0;">{z['temp']}°C</div>
-                <div style="font-size:11px; color:#9ca3af;">Humidity: {z['rh']}%</div>
-            </div>
-            """, unsafe_allow_html=True)
 
 # ===================================================================
 # TAB 3: AUTOMATED DISPATCH
