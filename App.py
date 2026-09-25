@@ -204,12 +204,22 @@ for z in loc_data["zones"]:
         "rh": zrh
     })
 
-# WBGT Calculation (ISO 7243 Standard)
+# WBGT Calculation & Dynamic Status Logic (ISO 7243 Standard)
 e_val = (humidity / 100.0) * 6.105 * np.exp((17.27 * base_temp) / (237.7 + base_temp))
 curr_wbgt = round(0.567 * base_temp + 0.393 * e_val + 3.94, 1)
 
-hazard_status = "CRITICAL HAZARD" if curr_wbgt >= 42.0 else ("EXTREME HAZARD" if curr_wbgt >= 35.0 else "HIGH WARNING")
-status_color = "#ef4444" if curr_wbgt >= 35.0 else "#f97316"
+if curr_wbgt >= 41.0:
+    hazard_status = "CRITICAL HAZARD"
+    status_color = "#ef4444"
+elif curr_wbgt >= 37.0:
+    hazard_status = "EXTREME HAZARD"
+    status_color = "#f97316"
+elif curr_wbgt >= 32.0:
+    hazard_status = "HIGH WARNING"
+    status_color = "#eab308"
+else:
+    hazard_status = "NORMAL ADVISORY"
+    status_color = "#10b981"
 
 # -------------------------------------------------------------------
 # COMMAND HEADER
@@ -304,19 +314,27 @@ with tab1:
     for idx, z in enumerate(processed_zones):
         e_z = (z["rh"] / 100.0) * 6.105 * np.exp((17.27 * z["temp"]) / (237.7 + z["temp"]))
         wbgt_z = round(0.567 * z["temp"] + 0.393 * e_z + 3.94, 1)
-        z_status = "CRITICAL HAZARD" if wbgt_z >= 40.0 else "EXTREME HAZARD"
+        
+        if wbgt_z >= 41.0:
+            z_status, z_col = "CRITICAL HAZARD", "#ef4444"
+        elif wbgt_z >= 37.0:
+            z_status, z_col = "EXTREME HAZARD", "#f97316"
+        elif wbgt_z >= 32.0:
+            z_status, z_col = "HIGH WARNING", "#eab308"
+        else:
+            z_status, z_col = "NORMAL ADVISORY", "#10b981"
         
         with z_cols[idx % 3]:
             st.markdown(f"""
             <div class="zone-card">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <span style="font-size:15px; font-weight:800; color:#fff;">{z['name']}</span>
-                    <span style="background:{status_color}; color:#fff; font-size:10px; font-weight:800; padding:3px 8px; border-radius:10px;">{z_status}</span>
+                    <span style="background:{z_col}; color:#fff; font-size:10px; font-weight:800; padding:3px 8px; border-radius:10px;">{z_status}</span>
                 </div>
                 <div style="margin-top:10px; font-size:13px; color:#cbd5e1;">
                     <div>🌡️ Temp: <b>{z['temp']}°C</b></div>
                     <div>💧 Humidity: <b>{z['rh']}%</b></div>
-                    <div>🔥 WBGT Index: <b style="color:{status_color};">{wbgt_z}°C</b></div>
+                    <div>🔥 WBGT Index: <b style="color:{z_col};">{wbgt_z}°C</b></div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -335,12 +353,10 @@ with tab2:
         return round(0.567 * temp + 0.393 * e + 3.94, 1)
 
     def _color_of(wbgt):
-        if wbgt >= 40.0:
-            return "#ef4444"
-        elif wbgt >= 35.0:
-            return "#f97316"
-        else:
-            return "#eab308"
+        if wbgt >= 41.0: return "#ef4444"
+        elif wbgt >= 37.0: return "#f97316"
+        elif wbgt >= 32.0: return "#eab308"
+        else: return "#10b981"
 
     center_wbgt = _wbgt_of(base_temp, humidity)
     map_points = [{
